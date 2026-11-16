@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<title>Portal Koko</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Portal Unit Kokurikulum SK Seksyen 7 Shah Alam">
+<meta name="theme-color" content="#1a1c63">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Portal Koko">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  :root { --navy: #1a1c63; --gold: #f2c14e; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--navy); overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+
+  /* Portal: penuh skrin, di bawah bar status telefon */
+  #portal { position: fixed; left: 0; right: 0; bottom: 0; top: env(safe-area-inset-top, 0px);
+    width: 100%; height: calc(100% - env(safe-area-inset-top, 0px)); border: 0; background: #fff; }
+
+  /* Skrin pembuka */
+  #splash { position: fixed; inset: 0; z-index: 10; background: var(--navy); color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    padding: 24px; text-align: center; transition: opacity .45s ease; }
+  #splash.hilang { opacity: 0; pointer-events: none; }
+  #splash img { width: 46vw; max-width: 210px; border-radius: 22%; animation: denyut 2.2s ease-in-out infinite; }
+  @keyframes denyut { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+  #splash h1 { margin: 6px 0 0; font-size: 20px; font-weight: 600; letter-spacing: .3px; }
+  #splash p { margin: 0; font-size: 13px; color: #c9cbf2; }
+  .bar { width: 150px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.15); overflow: hidden; margin-top: 8px; }
+  .bar span { display: block; width: 40%; height: 100%; border-radius: 4px; background: var(--gold); animation: gerak 1.3s ease-in-out infinite; }
+  @keyframes gerak { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
+
+  /* Mesej lambat / tiada internet */
+  #mesej { display: none; flex-direction: column; align-items: center; gap: 12px; max-width: 300px; }
+  #mesej.ada { display: flex; }
+  #mesej b { font-size: 16px; }
+  #mesej span { font-size: 13px; color: #c9cbf2; line-height: 1.5; }
+  .btn { appearance: none; border: 0; border-radius: 10px; padding: 12px 18px; font-size: 15px; font-weight: 600;
+    background: var(--gold); color: #2a1f00; width: 100%; cursor: pointer; text-decoration: none; text-align: center; }
+  .btn.kedua { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.35); font-weight: 500; }
+
+  /* Cadangan pasang (hanya bila dibuka dalam pelayar, bukan sebagai app) */
+  #pasang { position: fixed; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 5;
+    display: none; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px;
+    background: var(--navy); color: #fff; box-shadow: 0 6px 24px rgba(0,0,0,.3); font-size: 13px; line-height: 1.45; }
+  #pasang.ada { display: flex; }
+  #pasang img { width: 40px; height: 40px; border-radius: 10px; flex: none; }
+  #pasang .teks { flex: 1; }
+  #pasang .teks b { display: block; font-size: 14px; }
+  #pasang button { flex: none; border: 0; border-radius: 8px; padding: 8px 12px; font-weight: 600; font-size: 13px; cursor: pointer; }
+  #btnPasang { background: var(--gold); color: #2a1f00; }
+  #btnTutup { background: transparent; color: #c9cbf2; padding: 8px 6px !important; font-size: 18px !important; }
+</style>
+</head>
+<body>
+
+<iframe id="portal" title="Portal Unit Kokurikulum"
+  allow="clipboard-read; clipboard-write; camera; fullscreen"
+  referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+<div id="splash">
+  <img src="logo.png" alt="Logo Portal Koko">
+  <h1>Portal Unit Kokurikulum</h1>
+  <p>SK Seksyen 7 Shah Alam</p>
+  <div class="bar" id="bar"><span></span></div>
+  <div id="mesej">
+    <b id="mesejTajuk">Portal lambat dibuka</b>
+    <span id="mesejTeks">Semak sambungan internet, kemudian cuba lagi.</span>
+    <button class="btn" id="btnCuba">Cuba lagi</button>
+    <a class="btn kedua" id="btnPelayar" target="_blank" rel="noopener">Buka dalam pelayar</a>
+  </div>
+</div>
+
+<div id="pasang">
+  <img src="icon-192.png" alt="">
+  <div class="teks"><b>Pasang Portal Koko</b><span id="pasangTeks">Simpan di skrin utama telefon macam app.</span></div>
+  <button id="btnPasang">Pasang</button>
+  <button id="btnTutup" aria-label="Tutup">&times;</button>
+</div>
+
+<script>
+  /* ============================================================
+     PAUTAN PORTAL KOKO (Apps Script /exec)
+     Kalau pautan berubah, tukar baris di bawah sahaja.
+     ============================================================ */
+  var PORTAL_URL = 'https://script.google.com/a/macros/moe-dl.edu.my/s/AKfycbyo0emfw03MXPZph3pGzgKX2hxCz4_6OtzV4Q22YWuGmpggXrxHPv_AzSFXM50Wjd-GDw/exec';
+
+  var frame = document.getElementById('portal');
+  var splash = document.getElementById('splash');
+  var bar = document.getElementById('bar');
+  var mesej = document.getElementById('mesej');
+  var mula = Date.now(), siap = false, pemasa = null;
+
+  document.getElementById('btnPelayar').href = PORTAL_URL;
+
+  function tunjukMesej(tajuk, teks) {
+    document.getElementById('mesejTajuk').textContent = tajuk;
+    document.getElementById('mesejTeks').textContent = teks;
+    bar.style.display = 'none';
+    mesej.classList.add('ada');
+  }
+
+  function muat() {
+    siap = false; mula = Date.now();
+    mesej.classList.remove('ada'); bar.style.display = '';
+    splash.classList.remove('hilang');
+    if (!navigator.onLine) {
+      tunjukMesej('Tiada sambungan internet', 'Portal perlukan internet. Hidupkan data atau Wi-Fi, kemudian tekan Cuba lagi.');
+      return;
+    }
+    clearTimeout(pemasa);
+    pemasa = setTimeout(function () {
+      if (!siap) tunjukMesej('Portal lambat dibuka', 'Internet mungkin perlahan. Tunggu sebentar, atau tekan Cuba lagi.');
+    }, 25000);
+    frame.src = PORTAL_URL + (PORTAL_URL.indexOf('?') < 0 ? '?' : '&') + 'app=1';
+  }
+
+  frame.addEventListener('load', function () {
+    if (!frame.src) return;
+    siap = true; clearTimeout(pemasa);
+    // beri masa sedikit supaya isi portal sempat dilukis sebelum skrin pembuka hilang
+    var tunggu = Math.max(700, 1400 - (Date.now() - mula));
+    setTimeout(function () { splash.classList.add('hilang'); }, tunggu);
+  });
+
+  document.getElementById('btnCuba').addEventListener('click', muat);
+  window.addEventListener('online', function () { if (!siap) muat(); });
+
+  muat();
+
+  /* ---------- Cadangan pasang sebagai app ---------- */
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var kotak = document.getElementById('pasang');
+  var btnPasang = document.getElementById('btnPasang');
+  var tangguh = null;
+  function sudahTutup() { try { return localStorage.getItem('pasangTutup') === '1'; } catch (e) { return false; } }
+
+  if (!standalone && !sudahTutup()) {
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault(); tangguh = e;
+      kotak.classList.add('ada');
+    });
+    if (ios) {
+      document.getElementById('pasangTeks').innerHTML = 'Tekan butang <b style="display:inline">Share</b> di Safari, kemudian <b style="display:inline">Add to Home Screen</b>.';
+      btnPasang.style.display = 'none';
+      setTimeout(function () { kotak.classList.add('ada'); }, 2500);
+    }
+  }
+  btnPasang.addEventListener('click', function () {
+    if (!tangguh) return;
+    tangguh.prompt();
+    tangguh.userChoice.then(function () { tangguh = null; kotak.classList.remove('ada'); });
+  });
+  document.getElementById('btnTutup').addEventListener('click', function () {
+    kotak.classList.remove('ada');
+    try { localStorage.setItem('pasangTutup', '1'); } catch (e) {}
+  });
+  window.addEventListener('appinstalled', function () { kotak.classList.remove('ada'); });
+
+  /* ---------- Service worker (syarat app boleh dipasang) ---------- */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+</script>
+</body>
+</html>
