@@ -1,6 +1,6 @@
 /* Portal Koko: simpan fail app (bukan data portal) supaya app terbuka pantas.
    Tukar VERSI setiap kali fail app (logo, nama, warna) dikemas kini. */
-const VERSI = 'portal-koko-v1';
+const VERSI = 'portal-koko-v2';
 const FAIL = ['./', 'index.html', 'manifest.webmanifest', 'logo.png', 'icon-192.png', 'icon-512.png',
   'icon-maskable-192.png', 'icon-maskable-512.png', 'apple-touch-icon.png'];
 
