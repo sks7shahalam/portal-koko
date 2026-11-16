@@ -39,16 +39,14 @@
   html, body { margin: 0; height: 100%; background: var(--navy); overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
 
-  /* Portal: penuh skrin, di antara bar status (atas) dan garis home iPhone (bawah).
+  /* Portal: penuh skrin dari bawah bar status (atas) hingga hujung bawah skrin.
      Dalam pelayar guna 100%; bila dibuka sebagai app guna 100vh
      (iPhone mengira 100% lebih pendek dalam mod app, sebab itu ada ruang kosong di bawah). */
   :root { --atas: env(safe-area-inset-top, 0px); --bawah: env(safe-area-inset-bottom, 0px); --tinggi: 100%; }
   html.app { --tinggi: 100vh; }
   html.app, html.app body { height: 100vh; }
   #portal { position: fixed; left: 0; top: var(--atas); width: 100%;
-    height: calc(var(--tinggi) - var(--atas) - var(--bawah)); border: 0; background: #fff; display: block; }
-  /* Jalur di bawah portal (kawasan garis home iPhone) */
-  #jalurBawah { position: fixed; left: 0; right: 0; bottom: 0; height: var(--bawah); background: #fff; }
+    height: calc(var(--tinggi) - var(--atas)); border: 0; background: #fff; display: block; }
 
   /* Skrin pembuka */
   #splash { position: fixed; inset: 0; z-index: 10; background: var(--navy); color: #fff;
@@ -90,7 +88,6 @@
 <iframe id="portal" title="Portal Unit Kokurikulum"
   allow="clipboard-read; clipboard-write; camera; fullscreen"
   referrerpolicy="no-referrer-when-downgrade"></iframe>
-<div id="jalurBawah"></div>
 
 <div id="splash">
   <img src="logo.png" alt="Logo Portal Koko">
